@@ -22,7 +22,7 @@ shouldEqual answer 42
 // Now try running a snippet with a placeholder "__" and then fill the
 // placeholder with the correct answer and run the snippet again.
 let demo = 21 * 2
-shouldEqual demo __
+shouldEqual demo 42
 
 
 // F# uses type inference and so all variables have a static type
@@ -31,15 +31,15 @@ shouldEqual demo __
 let integers = 32 + 10
 let floats = 31.5 + 10.5
 
-shouldEqual integers __
-shouldEqual floats __
+shouldEqual integers 42
+shouldEqual floats 42.0
 
 
 // You can use standard logical operations when working with numbers:
 let high = 100.0
 let low = 50.0
 let check1 = 75.0 > low && 75.0 < high
-let check2 = __ > low && __ < high
+let check2 = 20.0 > low && 101.0 < high
 
 shouldEqual check1 true
 shouldEqual check2 false
@@ -55,7 +55,7 @@ open System
 
 let rnd = new Random()
 let num = rnd.Next(4)
-let rndCheck = num = 0 || num = 1 || __
+let rndCheck = num = 0 || num = 1 || num = 2 || num = 3 || num = 4
 
 shouldEqual rndCheck true
 
@@ -66,7 +66,7 @@ let mutable message1 = "Hello "
 message1 <- message1 + "world!"
 message1 <- message1 + " How are you?"
 
-shouldEqual message1 __
+shouldEqual message1 "Hello world! How are you?"
 
 
 // ----------------------------------------------------------------------------
@@ -76,19 +76,16 @@ shouldEqual message1 __
 // The 'let' keyword is not only used for defining variables, but also for
 // defining functions. In 'let f x = ...' the identifier 'f' is the name
 // of the function and 'x' is the argument of the function.
-let twoTimes num =
-  num * 2
+let twoTimes num = num * 2
 
-shouldEqual (twoTimes 21) __
+shouldEqual (twoTimes 21) 42
 
 // Note that the type of the function is inferred. In the previous example,
 // the function body used '2' and so it is a function 'int -> int' (you can
 // see that in the tool tips). F# is indentation-sensitive, so you do not need
 // to write brackets, but the body of the function needs to be indented further.
-let twoTimesFloat num =
-  __
-let twoTimesString str =
-  __ + " " + __
+let twoTimesFloat num = num * 2.0
+let twoTimesString str = str + " " + str
 
 shouldEqual (twoTimesFloat 21.0) 42.0
 shouldEqual (twoTimesString "Hi") "Hi Hi"
@@ -96,21 +93,19 @@ shouldEqual (twoTimesString "Hi") "Hi Hi"
 // When writing functions of multiple arguments, the arguments are separated
 // by spaces. This is both in the declaration and when calling the function.
 // However, you need parentheses when the argument is a more complex expression.
-let add a b =
-  a + b
-let mul a b =
-  a * b
+let add a b = a + b
+let mul a b = a * b
 
-let r1 = mul (add 3 4) (mul 2 __)
-let r2 = add (mul 3 (add 4 __)) 21
+let r1 = mul (add 3 4) (mul 2 3)
+let r2 = add (mul 3 (add 4 3)) 21
 let r3 = add (rnd.Next(2)) 41
 shouldEqual r1 42
 shouldEqual r2 42
-shouldEqual (r3 = __ || r3 = __) true
+shouldEqual (r3 = 41 || r3 = 42) true
 
 // For the task at the end, you also need to know how to
 // calculate exponentials using F# -- use the ** operator!
-let exp = 2.0 ** __
+let exp = 2.0 ** 5
 shouldEqual exp 32.0
 
 
@@ -123,14 +118,14 @@ shouldEqual exp 32.0
 // and the next interest is calculated from the borrowed money,
 // *including* the added interest.
 
-let interest = 0.02     // Interest rate is 2%
-let periods = 12.0      // Number of times the interest is compounded per year
-let years = 10.0        // Number of years the money is borrowed for
+let interest = 0.02 // Interest rate is 2%
+let periods = 12.0 // Number of times the interest is compounded per year
+let years = 10.0 // Number of years the money is borrowed for
 
 // Calculate compound interest using the formula from:
 // http://en.wikipedia.org/wiki/Compound_interest#Compound_Interest
 let compound investment =
-  __
+    investment * (1.0 + interest / periods) ** (periods * years)
 
 let res = compound 1000.0
 shouldEqual (round res) 1221.0

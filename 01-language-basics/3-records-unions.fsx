@@ -3,6 +3,7 @@
 // ============================================================================
 
 #load "setup.fsx"
+
 open Setup
 open System
 
@@ -13,54 +14,56 @@ open System
 // Record is a type that keeps two or more values of different types
 // in labelled fields. This is similar to tuples, but adds labels for
 // better readability. It is also similar to simple OOP classes.
-type Person =
-  { Name : string
-    Age : int }
+type Person = { Name: string; Age: int }
 
 // To create a record, just set the values of the record in curly brackets
-let yoda =
-  { Name = "Mr. Yoda"
-    Age = 700 }
+let yoda = { Name = "Mr. Yoda"; Age = 700 }
 
-shouldEqual yoda.Name __
-shouldEqual yoda.Age __
+shouldEqual yoda.Name "Mr. Yoda"
+shouldEqual yoda.Age 700
 
 // The fields of the record are immutable. When you want to change something
 // you need to create a *new* instance with modified state. To do this, you
 // can use the 'with' keyword which changes only the specified fields:
-let olderYoda =
-  { yoda with Age = yoda.Age + 200 }
+let olderYoda = { yoda with Age = yoda.Age + 200 }
 
-shouldEqual yoda.Name __
-shouldEqual yoda.Age __
-shouldEqual olderYoda.Name __
-shouldEqual olderYoda.Age __
+shouldEqual yoda.Name "Mr. Yoda"
+shouldEqual yoda.Age 700
+shouldEqual olderYoda.Name "Mr. Yoda"
+shouldEqual olderYoda.Age 900
 
 // When writing a function, we do not need type annotations, because the
 // compiler can infer the type of the argument from the labels used:
 let isAlive person =
-  if person.Name = "Mr. Yoda" then person.Age < 800
-  else person.Age < 100
+    if person.Name = "Mr. Yoda" then
+        person.Age < 800
+    else
+        person.Age < 100
 
-shouldEqual (isAlive yoda) __
-shouldEqual (isAlive olderYoda) __
+shouldEqual (isAlive yoda) true
+shouldEqual (isAlive olderYoda) false
 
 // Now, write a function that formats information about person to match
 // the following tests. To format strings, you can use the 'sprintf'
 // function which takes a format string and an argument:
-shouldEqual (sprintf "The answer to %s is %d" "The Question" 42) __
-shouldEqual (sprintf "The answer to %s is %.0f" "The Question" 42.0) __
+shouldEqual (sprintf "The answer to %s is %d" "The Question" 42) "The answer to The Question is 42"
+shouldEqual (sprintf "The answer to %s is %.0f" "The Question" 42.0) "The answer to The Question is 42"
 
 let formatPerson person =
-  __
+    let agestr =
+        if isAlive person then
+            sprintf "%d years" person.Age
+        else
+            "Died"
+
+    sprintf "%s (%s)" person.Name agestr
 
 shouldEqual (formatPerson yoda) "Mr. Yoda (700 years)"
 shouldEqual (formatPerson olderYoda) "Mr. Yoda (Died)"
 
 // Now, use the 'with' keyword to write a function that
 // returns a person older by 1 year
-let oneYearOlder person =
-  __
+let oneYearOlder person = { person with Age = person.Age + 1 }
 
 shouldEqual (formatPerson (oneYearOlder yoda)) "Mr. Yoda (701 years)"
 shouldEqual (formatPerson (oneYearOlder olderYoda)) "Mr. Yoda (Died)"
@@ -74,9 +77,9 @@ shouldEqual (formatPerson (oneYearOlder olderYoda)) "Mr. Yoda (Died)"
 // a calendar item can be scheduled to occur once, repeatedly or never.
 
 type Schedule =
-  | Once of DateTime
-  | Repeatedly of DateTime * TimeSpan
-  | Never
+    | Once of DateTime
+    | Repeatedly of DateTime * TimeSpan
+    | Never
 
 // The names 'Once', 'Repeatedly' and 'Never' are type constructors that
 // create a value of type 'Schedule'. The schedule represents one of the cases.
@@ -90,12 +93,13 @@ let s2 = Repeatedly(DateTime.Now.Date.AddDays(2.0), TimeSpan.FromDays(7.0))
 // following formatting function prints details about schedule:
 
 let format i =
-  match i with
-  | Never -> "Unscheduled"
-  | Once(dt) -> sprintf "In %.0f days" (dt - DateTime.Now.Date).TotalDays
+    match i with
+    | Never -> "Unscheduled"
+    | Once(dt) -> sprintf "In %.0f days" (dt - DateTime.Now.Date).TotalDays
+    | Repeatedly(dt, span) -> sprintf "In %.0f days, then every %d days" (dt - DateTime.Now.Date).TotalDays span.Days
 
-shouldEqual (format s0) __
-shouldEqual (format s1) __
+shouldEqual (format s0) "Unscheduled"
+shouldEqual (format s1) "In 5 days"
 shouldEqual (format s2) "In 2 days, then every 7 days"
 
 // Now, write a function 'hasExpired' that returns 'true' when the
@@ -103,7 +107,9 @@ shouldEqual (format s2) "In 2 days, then every 7 days"
 // is unscheduled or occurs in the future.
 
 let hasExpired schedule =
-  __
+    match schedule with
+    | Once(dt) -> dt < DateTime.Now.Date
+    | _ -> false
 
 shouldEqual (hasExpired Never) false
 shouldEqual (hasExpired (Once(DateTime.Now.AddDays(4.0)))) false
@@ -129,25 +135,26 @@ let o1 = Some(10)
 let o2 = None
 
 let valueOrZero o =
-  match o with
-  | Some(v) -> v
-  | None -> 0
+    match o with
+    | Some(v) -> v
+    | None -> 0
 
-shouldEqual (valueOrZero (Some(10))) __
-shouldEqual (valueOrZero None) __
+shouldEqual (valueOrZero (Some(10))) 10
+shouldEqual (valueOrZero None) 0
 
 // Options are often used when you are writing some code that may fail. For
 // example, if we have a simple function 'tryFindPerson' that returns a person
 // based on name, but cannot always return the person, we can write:
 
 let tryFindPerson name =
-  match name with
-  | "Yoda" -> Some { Name = "Mr. Yoda"; Age = 700 }
-  | "Luke" -> Some { Name = "Luke Skywalker"; Age = 25 }
-  | _ -> None
+    match name with
+    | "Yoda" -> Some { Name = "Mr. Yoda"; Age = 700 }
+    | "Luke" -> Some { Name = "Luke Skywalker"; Age = 25 }
+    | "Vader" -> Some { Name = "Darth Vader"; Age = 50 }
+    | _ -> None
 
-shouldEqual (tryFindPerson "Luke") __
-shouldEqual (tryFindPerson "Vader") __
+shouldEqual (tryFindPerson "Luke") (Some { Name = "Luke Skywalker"; Age = 25 })
+shouldEqual (tryFindPerson "Vader") None
 
 // Now, modify the 'tryFindPerson' so that it also supports evli characters
 shouldEqual (tryFindPerson "Vader") (Some { Name = "Darth Vader"; Age = 50 })
@@ -161,8 +168,10 @@ shouldEqual (tryFindPerson "Vader") (Some { Name = "Darth Vader"; Age = 50 })
 // to use pattern matching with 'match' (like in 'valueOrZero') to handle
 // the two possible cases. The compiler is forcing you to write code that
 // handles both the "happy path" and possible error!
-let formatOptionalPerson (info:option<Person>) =
-  __
+let formatOptionalPerson (info: option<Person>) =
+  match info with
+  | Some(p) -> formatPerson p
+  | None -> "Unknown"
 
 shouldEqual (formatOptionalPerson (tryFindPerson "Luke")) "Luke Skywalker (25 years)"
 shouldEqual (formatOptionalPerson (tryFindPerson "Yoda")) "Mr. Yoda (700 years)"
@@ -177,9 +186,9 @@ shouldEqual (formatOptionalPerson (tryFindPerson "R2D2")) "Unknown"
 // additional Unknown value means that we do not know the value (perhaps
 // because we do not have enough information).
 type ThreeState =
-  | Truth
-  | Falsehood
-  | Unknown
+    | Truth
+    | Falsehood
+    | Unknown
 
 // The logical operations for three-state logics are defined by the following
 // tables (basically, if a value is unknown, it could be either true or false
@@ -207,28 +216,36 @@ type ThreeState =
 // functions, you should need at most 4 cases!
 
 let threeStateOr a b =
-  __
-let threeStateAnd a b =
-  __
+  match a,b with
+  | (Truth, _) -> Truth
+  | (_, Truth) -> Truth
+  | (Falsehood, Falsehood) -> Falsehood
+  | _ -> Unknown
+let threeStateAnd a b = 
+  match a,b with
+  | (Falsehood, _) -> Falsehood
+  | (_, Falsehood) -> Falsehood
+  | (Truth, Truth) -> Truth
+  | _ -> Unknown
 
 // Test which verifies that 'threeStateOr' is implemented correctly
 // (Do not worry if you don't understand all the code here!)
-for a in [Truth; Falsehood; Unknown] do
-  for b in [Truth; Falsehood; Unknown] do
-    if a = Truth || b = Truth then
-      shouldEqual (threeStateOr a b) Truth
-    elif a = Falsehood && b = Falsehood then
-      shouldEqual (threeStateOr a b) Falsehood
-    else
-      shouldEqual (threeStateOr a b) Unknown
+for a in [ Truth; Falsehood; Unknown ] do
+    for b in [ Truth; Falsehood; Unknown ] do
+        if a = Truth || b = Truth then
+            shouldEqual (threeStateOr a b) Truth
+        elif a = Falsehood && b = Falsehood then
+            shouldEqual (threeStateOr a b) Falsehood
+        else
+            shouldEqual (threeStateOr a b) Unknown
 
 // Test which verifies that 'threeStateAnd' is implemented correctly
 // (Do not worry if you don't understand all the code here!)
-for a in [Truth; Falsehood; Unknown] do
-  for b in [Truth; Falsehood; Unknown] do
-    if a = Truth && b = Truth then
-      shouldEqual (threeStateAnd a b) Truth
-    elif a = Falsehood || b = Falsehood then
-      shouldEqual (threeStateAnd a b) Falsehood
-    else
-      shouldEqual (threeStateAnd a b) Unknown
+for a in [ Truth; Falsehood; Unknown ] do
+    for b in [ Truth; Falsehood; Unknown ] do
+        if a = Truth && b = Truth then
+            shouldEqual (threeStateAnd a b) Truth
+        elif a = Falsehood || b = Falsehood then
+            shouldEqual (threeStateAnd a b) Falsehood
+        else
+            shouldEqual (threeStateAnd a b) Unknown

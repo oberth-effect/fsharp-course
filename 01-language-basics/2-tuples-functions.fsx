@@ -3,6 +3,7 @@
 // ============================================================================
 
 #load "setup.fsx"
+
 open Setup
 open System
 
@@ -22,30 +23,30 @@ let (name1, age1) = person1
 let person2 = "Ludwig", "Wittgenstein", 56
 let name2, surname2, age2 = person2
 
-shouldEqual name1 __
-shouldEqual surname2 __
+shouldEqual name1 "Ludwig"
+shouldEqual surname2 "Wittgenstein"
 
 // F# also provides two simple functions for working with two-element tuples
 let person = "Ludwig", 56
-shouldEqual (fst person) __
-shouldEqual (snd person) __
+shouldEqual (fst person) "Ludwig"
+shouldEqual (snd person) 56
 
 
 // Tuples can be useful when you want to return mutliple values as the result
 // of a function - for example name and age. The following snippet also
 // shows how to use the 'if .. then .. else' construct in F#
 let getPerson job =
-  if job = "philosopher" then ("Ludwig", 56)
-  elif job = "scientist" then ("Albert", 66)
-  else ("Someone", 10)
+    if job = "philosopher" then ("Ludwig", 56)
+    elif job = "scientist" then ("Albert", 66)
+    else ("Someone", 10)
 
-shouldEqual (fst (getPerson "scientist")) __
-shouldEqual (snd (getPerson "scientist")) __
+shouldEqual (fst (getPerson "scientist")) "Albert"
+shouldEqual (snd (getPerson "scientist")) 66
 
 // F# uses "structural equality" which means that tuples containing the
 // same values are treated as equal. For example, try the following:
 shouldEqual ("Joe", 13) ("Joe", 13)
-shouldEqual (getPerson "philosopher") __
+shouldEqual (getPerson "philosopher") ("Ludwig", 56)
 
 
 // When writing functions that take tuples as arguments, the tuple is just
@@ -54,27 +55,24 @@ shouldEqual (getPerson "philosopher") __
 // by using the pattern directly in the argument of the function. The following
 // two functions are the same:
 let addYear1 person =
-  let name, age = person
-  name, age + 1
+    let name, age = person
+    name, age + 1
 
-let addYear2 (name, age) =
-  name, age + 1
+let addYear2 (name, age) = name, age + 1
 
-shouldEqual (addYear1 (getPerson __)) ("Albert", __)
-shouldEqual (addYear2 (getPerson __)) ("Ludwig", __)
+shouldEqual (addYear1 (getPerson "scientist")) ("Albert", 67)
+shouldEqual (addYear2 (getPerson "philosopher")) ("Ludwig", 57)
 
 // In some cases, you may need to provide type annotation to specify the
 // type explicitly. For example, when you want to call a .NET member,
 // the F# compiler needs to know the type (so that it can check whether the
 // member exists). You can annotate single variables or composed patterns.
-let getLength (name:string) =
-  name.Length
+let getLength (name: string) = name.Length
 
-let getNameLength ((name, age):string * int) =
-  name.Length
+let getNameLength ((name, age): string * int) = name.Length
 
-shouldEqual (getLength "Ludwig") __
-shouldEqual (getNameLength (getPerson "philosopher")) __
+shouldEqual (getLength "Ludwig") 6
+shouldEqual (getNameLength (getPerson "philosopher")) 6
 
 // ============================================================================
 // TASK #2: Validating inputs
@@ -91,11 +89,19 @@ shouldEqual (getNameLength (getPerson "philosopher")) __
 // "Char.IsUpper" to check whether character is upper case and string
 // operations including "str.IndexOf" and "str.Contains".
 
-let validAge person = __
-let validName person = __
+let validAge person =
+    let age = snd person
+    0 <= age && age <= 150
 
-let validPerson person =
-  validAge person && validName person
+let validName person =
+    let name: string = fst person
+    let spaceIndex = name.IndexOf(" ")
+
+    name.[0] |> Char.IsUpper
+    && name.Contains(" ")
+    && name.[spaceIndex + 1] |> Char.IsUpper
+
+let validPerson person = validAge person && validName person
 
 shouldEqual (validPerson ("Tomas Petricek", 42)) true
 shouldEqual (validPerson ("Tomas Petricek", 242)) false
@@ -111,8 +117,7 @@ shouldEqual (validPerson ("tomas Petricek", 42)) false
 // function as an argument. Functions are just simple values that can
 // be passed around in the usual way. The following function takes
 // 'f' and applies it to the age of a person
-let transformAge f (name, age) =
-  (name, f age)
+let transformAge f (name, age) = (name, f age)
 
 // Functions that increment/decrement age
 let increment a = a + 1
@@ -120,11 +125,10 @@ let decrement a = a - 1
 
 // Implement a function that caps the age to 0 when it is
 // smaller than 0; and to 150 if it is greater than that.
-let cap a =
-  __
+let cap a = Math.Max(Math.Min(a, 150), 0)
 
-shouldEqual (transformAge increment ("Tomas", 42)) __
-shouldEqual (transformAge decrement ("Tomas", 42)) __
+shouldEqual (transformAge increment ("Tomas", 42)) ("Tomas", 43)
+shouldEqual (transformAge decrement ("Tomas", 42)) ("Tomas", 41)
 shouldEqual (transformAge cap ("Tomas", -1)) ("Tomas", 0)
 shouldEqual (transformAge cap ("Tomas", 420)) ("Tomas", 150)
 
@@ -135,28 +139,28 @@ shouldEqual (transformAge cap ("Tomas", 420)) ("Tomas", 150)
 ("Tomas", 40)
 |> transformAge increment
 |> transformAge increment
-|> shouldEqual __
+|> shouldEqual ("Tomas", 42)
 
 // The previous example specified functions (to be used as parameters)
 // explicitly using named functions. You can write the same functions
 // inline using the lambda function syntax and the 'fun' keyword.
 
-let r1 =
-  ("Tomas", 42)
-  |> transformAge (fun a -> a + 2)
+let r1 = ("Tomas", 42) |> transformAge (fun a -> a + 2)
 
-shouldEqual r1 __
+shouldEqual r1 ("Tomas", 44)
 
 // Lambda functions can contain multi-line code. It just needs to start
 // on a new line and be indented further than the previous line
-let r2 = ("Tomas", 42) |> transformAge (fun a ->
-  printfn "Processing person with age: %d" a
-  a + 2)
+let r2 =
+    ("Tomas", 42)
+    |> transformAge (fun a ->
+        printfn "Processing person with age: %d" a
+        a + 2)
 
-shouldEqual r2 __
+shouldEqual r2 ("Tomas", 44)
 
 // Rewrite the 'cap' function from a previous example as an inline lambda
-let r4 = ("Tomas", -1) |> transformAge (fun _ -> __)
+let r4 = ("Tomas", -1) |> transformAge (fun a -> Math.Max(Math.Min(a, 150), 0))
 
 shouldEqual r4 ("Tomas", 0)
 
@@ -167,11 +171,8 @@ shouldEqual r4 ("Tomas", 0)
 // The 'transformAge' function applies the specified function to the
 // age (second elemnet of the tuple). Implement a similar function that
 // transforms the name of a tuple and use it to turn name into upper case.
-let transformName f (name, age) =
-  __
+let transformName f (name, age) = (f name, age)
 
-let r5 =
-  ("Tomas", 42)
-  |> transformName (fun (n:string) -> n.ToUpper())
+let r5 = ("Tomas", 42) |> transformName (fun (n: string) -> n.ToUpper())
 
 shouldEqual r5 ("TOMAS", 42)

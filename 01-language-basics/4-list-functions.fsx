@@ -3,6 +3,7 @@
 // ============================================================================
 
 #load "setup.fsx"
+
 open System
 open Setup
 
@@ -22,29 +23,20 @@ let al = medals |> List.last
 let len = medals |> List.length
 
 
-// There is a number of useful functions that take other functions as argument. 
+// There is a number of useful functions that take other functions as argument.
 // For example, we can get years of when the medals were awarded:
 
-let getYear (item:Medal) =
-  item.Year
+let getYear (item: Medal) = item.Year
 
-let minYear1 =
-  medals
-  |> List.map getYear
-  |> List.min
+let minYear1 = medals |> List.map getYear |> List.min
 
 // The same code can be written more easily using inline lambda function
-let minYear2 =
-  medals
-  |> List.map (fun item -> item.Year)
-  |> List.min
+let minYear2 = medals |> List.map (fun item -> item.Year) |> List.min
 
 
 // You can do this even more easily using the 'List.minBy' function that takes
 // a function as an argument and returns the itme with the smallest returned value.
-let minItem = 
-  medals 
-  |> List.minBy __
+let minItem = medals |> List.minBy (fun item -> item.Year)
 
 shouldEqual (int minYear1) (int minItem.Year)
 
@@ -59,60 +51,89 @@ medals
 // Now, count the number of Gold medals won by athletes from 'Soviet Union'
 // and 'United States' between the years 1950 and 1990!
 
-let usGolds = __
-let sovietGolds = __
+let usGolds =
+    medals
+    |> List.filter (fun item ->
+        item.Team = "United States"
+        && item.Year <= 1990
+        && item.Year >= 1950
+        && item.Medal = "Gold")
+    |> List.length
+
+let sovietGolds =
+    medals
+    |> List.filter (fun item ->
+        item.Team = "Soviet Union"
+        && item.Year <= 1990
+        && item.Year >= 1950
+        && item.Medal = "Gold")
+    |> List.length
 
 shouldEqual usGolds 730
 shouldEqual sovietGolds 838
 
 
-// For more interesting operations with medals, we can use the 'groupBy' 
-// function. This turns the input list into a list of groups based on the 
-// given key selector. Alongside with 'sort', we can get some interesting 
+// For more interesting operations with medals, we can use the 'groupBy'
+// function. This turns the input list into a list of groups based on the
+// given key selector. Alongside with 'sort', we can get some interesting
 // statistics! For example, find top countries by the total number of medals:
 
-let topCountries = 
-  medals
-  |> List.groupBy (fun item -> item.Team)
-  |> List.map (fun (team, items) -> 
-      // NOTE: It is useful to write this as multi-line lambda. If you want
-      // to do more complicated processing of the items that belong to 
-      // the current group, you will need a nested |> here!
-      let medals = List.length items
-      team, medals)
-  |> List.sortByDescending snd
-  |> List.take 3
+let topCountries =
+    medals
+    |> List.groupBy (fun item -> item.Team)
+    |> List.map (fun (team, items) ->
+        // NOTE: It is useful to write this as multi-line lambda. If you want
+        // to do more complicated processing of the items that belong to
+        // the current group, you will need a nested |> here!
+        let medals = List.length items
+        team, medals)
+    |> List.sortByDescending snd
+    |> List.take 3
 
-shouldEqual topCountries 
-  [ ("United States", 4858); ("Soviet Union", 2049); 
-    ("United Kingdom (Great Britain)", 1874) ]
+shouldEqual
+    topCountries
+    [ ("United States", 4858)
+      ("Soviet Union", 2049)
+      ("United Kingdom (Great Britain)", 1874) ]
 
 // ============================================================================
 // TASKS: Working with lists
 // ============================================================================
 
-// TASK #1: What are the sports (based on item.Sport) for which 
+// TASK #1: What are the sports (based on item.Sport) for which
 // less than 10 medals were awarded over the entire history?
 
-let oddSports = 
-  __<string list>
+let oddSports =
+    medals
+    |> List.groupBy (fun item -> item.Discipline)
+    |> List.filter (fun item -> List.length (snd (item)) < 10)
+    |> List.map fst
 
 // Your code above should return a list of sport names. To avoid spoilers,
 // the following checks you got a result with the right set of letters!
-shouldEqual (set (String.concat "" oddSports)) 
-  (set " BCJMPRWadelmopqrstu")
+shouldEqual (set (String.concat "" oddSports)) (set " BCJMPRWadelmopqrstu")
 
 
-// TASK #2: It turns out that some names appear multiple times in 
+// TASK #2: It turns out that some names appear multiple times in
 // the results, even if this clearly cannot be the same person.
 // But let's try this anyway! What name of an athlete appears
 // with greatest distance between the first and the last medal
-// awarded to them? To avoid getting boring "David Smith", group the 
+// awarded to them? To avoid getting boring "David Smith", group the
 // athletes by both their name and their team!
 
-let namesWithYearDiffs = 
-  __<(string * int) list>
+let getDiff lst =
+    let mx = List.maxBy (fun item -> item.Year) lst
+    let mn = List.minBy (fun item -> item.Year) lst
+    mx.Year - mn.Year
 
-// Of course, the person winning medals 76 years apart is not the same 
+let namesWithYearDiffs =
+    medals
+    |> List.groupBy (fun item -> item.Athlete, item.Team)
+    |> List.map (fun ((ath, team), lst) -> ath, getDiff lst)
+    |> List.sortByDescending snd
+
+
+
+// Of course, the person winning medals 76 years apart is not the same
 // person, but google them to find out about an interesting family :-)
 shouldEqual 76 (snd (Seq.head namesWithYearDiffs))
