@@ -26,8 +26,8 @@ type State =
   { Count : int }
 
 type Event = 
-  | Increment
-  | Decrement
+  | Change of amount: int
+  | Reset
 
 // ----------------------------------------------------------------------------
 // Given an old state and update event, produce a new state
@@ -35,8 +35,8 @@ type Event =
 
 let update state evt = 
   match evt with 
-  | Increment -> { state with Count = state.Count + 1 }
-  | Decrement -> { state with Count = state.Count - 1 }
+  | Change(ch) -> { state with Count = state.Count + ch }
+  | Reset -> {state with Count = 0}
 
 // ----------------------------------------------------------------------------
 // Render page based on the current state
@@ -44,9 +44,10 @@ let update state evt =
 
 let render trigger state = 
   h?div [] [
-    h?h1 [] [ text $"Count: {state.Count}" ]
-    h?button [ "click" =!> fun _ _ -> trigger(Increment) ] [ text "+1" ]
-    h?button [ "click" =!> fun _ _ -> trigger(Decrement) ] [ text "-1" ] 
+    h?h1 ["style" => "color:pink"] [ text $"Count: {state.Count}" ]
+    h?button [ "click" =!> fun _ _ -> trigger(Change(1)) ] [ text "+1" ]
+    h?button [ "click" =!> fun _ _ -> trigger(Change(-1)) ] [ text "-1" ]
+    h?button [ "click" =!> fun _ _ -> trigger(Reset) ] [ text "Reset" ]
   ]
 
 // ----------------------------------------------------------------------------

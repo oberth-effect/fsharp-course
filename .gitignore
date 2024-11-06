@@ -3,3 +3,5 @@ obj
 bin
 *.fs.js
 *.fs.js.map
+
+.direnv

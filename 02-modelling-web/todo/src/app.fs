@@ -1,4 +1,5 @@
 module Counter
+
 open Browser.Dom
 open Browser.Types
 open FSharpDemos.Html
@@ -38,49 +39,77 @@ open FSharpDemos.Html
 // Domain model - update events and application state
 // ------------------------------------------------------------------------------------------------
 
+type Item = { ID: int; Work: string; Done: bool }
+
 type State =
-  { Input : string }
+    { Input: string
+      Todos: List<Item>
+      NextId: int }
 
 type Event =
-  | Input of string
+    | Input of string
+    | Create
+    | Remove of int
+    | SwitchState of int
 
 // ------------------------------------------------------------------------------------------------
 // Given an old state and update event, produce a new state
 // ------------------------------------------------------------------------------------------------
 
-let update state evt = 
-  match evt with
-  | Input s -> { state with Input = s }
+let update state evt =
+    match evt with
+    | Input s -> { state with Input = s }
+    | Create ->
+        { state with
+            Todos =
+                state.Todos
+                @ [ { ID = state.NextId
+                      Work = state.Input
+                      Done = false } ]
+            NextId = state.NextId + 1 }
+    | Remove id ->
+        { state with
+            Todos = state.Todos |> List.filter (fun i -> i.ID <> id) }
+    | SwitchState id ->
+        { state with
+            Todos =
+                state.Todos
+                |> List.map (fun i ->
+                    { i with
+                        Done = if i.ID = id then not i.Done else i.Done }) }
 
 // ------------------------------------------------------------------------------------------------
 // Render page based on the current state
 // ------------------------------------------------------------------------------------------------
 
+
+let renderItem trigger it =
+    h?li
+        [ "click" =!> fun _ _ -> trigger (SwitchState it.ID)
+          "class" => if it.Done then "done" else "" ]
+        [ text it.Work
+          h?a [ "href" => "#"; "click" =!> fun _ _ -> trigger (Remove it.ID) ] [ h?span [] [ text "X" ] ] ]
+
 let render trigger state =
-  h?div [] [
-    h?ul [] [
-      h?li [ "class" => "done" ] [
-        text "First work item"
-        h?a [ "href" => "#"; "click" =!> fun _ _ -> 
-          window.alert("Remove me!") ] [ h?span [] [ text "X" ] ]
-      ]
-      h?li [] [
-        text  "Second work item"
-        h?a [ "href" => "#"; "click" =!> fun _ _ -> 
-          window.alert("Remove me!") ] [ h?span [] [ text "X" ] ]
-      ]
-    ]
-    h?input [
-      "value" => state.Input
-      "input" =!> fun d _ -> trigger (Input(unbox<HTMLInputElement>(d).value)) ] []
-    h?button [ "click" =!> fun _ _ -> window.alert($"Add {state.Input}") ] [ 
-      text "Add" 
-    ]
-  ]
+    h?div
+        []
+        [ h?ul [] (List.map (renderItem trigger) state.Todos)
+          h?input
+              [ "value" => state.Input
+                "input" =!> fun d _ -> trigger (Input(unbox<HTMLInputElement>(d).value)) ]
+              []
+          h?button [ "click" =!> fun _ _ -> trigger (Create) ] [ text "Add" ] ]
 
 // ------------------------------------------------------------------------------------------------
 // Start the application with initial state
 // ------------------------------------------------------------------------------------------------
 
-let init = { Input = "" }
-createVirtualDomApp "out" init render update 
+let init =
+    { Input = ""
+      Todos =
+        [ { ID = -1
+            Work = "Open TODO list"
+            Done = true } ]
+      NextId = 0 }
+
+createVirtualDomApp "out" init render update
